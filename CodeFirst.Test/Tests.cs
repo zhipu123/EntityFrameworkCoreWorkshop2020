@@ -29,16 +29,18 @@ namespace TestCodeFirst
             {
                 context.CreateEmptyViaWipe();
                 context.Database.EnsureCreated();
-                var author = new Author{NickName = "Dr.Who", FirstName = "Doctor", LastName = "Who", Email = "doctor@who.com"};
+                var author = new Author {NickName = "Dr.Who", FirstName = "Doctor", LastName = "Who", Email = "doctor@who.com"};
                 var userA = new User {Email = "A@user.com", FirstName = "Ted", LastName = "Test", NickName = "TestA"};
                 var userB = new User {Email = "B@user.com", FirstName = "Jim", LastName = "Test", NickName = "TestB"};
                 var post = new Post
                 {
-                    Content = "first post", Comments = new[]
+                    Content = "first post", 
+                    Comments = new[]
                     {
                         new Comment {User = userA, CommentContent = "hhh"},
                         new Comment {User = userB, CommentContent = "bbb"},
-                    }
+                    },
+                    Author = author
                 };
                 context.Posts.Add(post);
                 context.SaveChanges();
