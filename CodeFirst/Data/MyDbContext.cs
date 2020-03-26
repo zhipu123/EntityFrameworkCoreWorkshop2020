@@ -4,14 +4,25 @@ using Microsoft.EntityFrameworkCore;
 namespace CodeFirst.Data
 {
     public class MyDbContext : DbContext
+    
     {
+        public MyDbContext()
+        {
+            
+        }
+        public MyDbContext(DbContextOptions options): base(options)
+        {
+            
+        }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=codeFirst.db");
+            if (!optionsBuilder.IsConfigured)
+            {
+                optionsBuilder.UseSqlite("Data Source=codeFirst.db");
+            }
         }
 
         public DbSet<Post> Posts { get; set; }
-        public DbSet<User> Users { get; set; }
-        public DbSet<Author> Authors { get; set; }
     }
 }

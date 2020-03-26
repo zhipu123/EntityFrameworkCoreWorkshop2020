@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CodeFirst.Models
 {
@@ -7,5 +9,6 @@ namespace CodeFirst.Models
         public string PostId { get; set; }
         public String Content { get; set; }
         public Author Author { get; set; }
+        public IList<Comment> Comments { get; set; }
     }
 }
