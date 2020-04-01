@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using DBFirst.Models;
@@ -35,32 +36,28 @@ namespace DBFirst.Data
         {
             if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http://go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. See http: //go.microsoft.com/fwlink/?LinkId=723263 for guidance on storing connection strings.
                 optionsBuilder.UseSqlite("Data Source=Northwind_small.sqlite");
             }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Category>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedNever();
-            });
+            modelBuilder.Entity<Category>(entity => { entity.Property(e => e.Id).ValueGeneratedNever(); });
 
-            modelBuilder.Entity<Employee>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedNever();
-            });
+            modelBuilder.Entity<Employee>(entity => { entity.Property(e => e.Id).ValueGeneratedNever(); });
 
             modelBuilder.Entity<Order>(entity =>
             {
                 entity.Property(e => e.Id).ValueGeneratedNever();
+                entity
+                    .HasOne<Customer>(e => e.Customer)
+                    .WithMany()
+                    .HasForeignKey(order => order.CustomerId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
-            modelBuilder.Entity<Product>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedNever();
-            });
+            modelBuilder.Entity<Product>(entity => { entity.Property(e => e.Id).ValueGeneratedNever(); });
 
             modelBuilder.Entity<ProductDetailsV>(entity =>
             {
@@ -69,20 +66,11 @@ namespace DBFirst.Data
                 entity.ToView("ProductDetails_V");
             });
 
-            modelBuilder.Entity<Region>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedNever();
-            });
+            modelBuilder.Entity<Region>(entity => { entity.Property(e => e.Id).ValueGeneratedNever(); });
 
-            modelBuilder.Entity<Shipper>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedNever();
-            });
+            modelBuilder.Entity<Shipper>(entity => { entity.Property(e => e.Id).ValueGeneratedNever(); });
 
-            modelBuilder.Entity<Supplier>(entity =>
-            {
-                entity.Property(e => e.Id).ValueGeneratedNever();
-            });
+            modelBuilder.Entity<Supplier>(entity => { entity.Property(e => e.Id).ValueGeneratedNever(); });
 
             OnModelCreatingPartial(modelBuilder);
         }

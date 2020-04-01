@@ -2,15 +2,22 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 
 namespace DBFirst.Models
 {
-    public partial class Order
+    public partial class Order : IValidatableObject
     {
         [Key]
         public long Id { get; set; }
-        [Column(TypeName = "VARCHAR(8000)")]
+        [ForeignKey("CustomerId")]
+       
         public virtual Customer Customer { get; set; }
+        [Column(TypeName = "VARCHAR(8000)")]
+        [Required]
+        [NotNull]
+        public  string CustomerId { get; set; }
         public virtual Employee Employee { get; set; }
         [Column(TypeName = "VARCHAR(8000)")]
         public string OrderDate { get; set; }
@@ -36,5 +43,12 @@ namespace DBFirst.Models
         public string ShipCountry { get; set; }
         
         public virtual List<EmployeeTerritory> EmployeeTerritories { get; set; }
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (String.IsNullOrEmpty(ShipAddress))
+            {
+                yield return new ValidationResult("ShipAddress should not be empty", new [] { nameof(ShipAddress)});
+            }
+        }
     }
 }
