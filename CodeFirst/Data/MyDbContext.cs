@@ -23,6 +23,12 @@ namespace CodeFirst.Data
             }
         }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            Post.ApplyPost(modelBuilder);
+            base.OnModelCreating(modelBuilder);
+        }
+
         public DbSet<Post> Posts { get; set; }
     }
 }

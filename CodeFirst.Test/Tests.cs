@@ -34,7 +34,7 @@ namespace TestCodeFirst
                 var userB = new User {Email = "B@user.com", FirstName = "Jim", LastName = "Test", NickName = "TestB"};
                 var post = new Post
                 {
-                    Content = "first post", 
+                    Content = "first post irst post", 
                     Comments = new[]
                     {
                         new Comment {User = userA, CommentContent = "hhh"},
