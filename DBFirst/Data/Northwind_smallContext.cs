@@ -54,7 +54,7 @@ namespace DBFirst.Data
                     .HasOne<Customer>(e => e.Customer)
                     .WithMany()
                     .HasForeignKey(order => order.CustomerId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.ClientCascade);
             });
 
             modelBuilder.Entity<Product>(entity => { entity.Property(e => e.Id).ValueGeneratedNever(); });

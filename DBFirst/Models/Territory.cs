@@ -12,6 +12,9 @@ namespace DBFirst.Models
         public string Id { get; set; }
         [Column(TypeName = "VARCHAR(8000)")]
         public string TerritoryDescription { get; set; }
-        public  virtual Region Region { get; set; }
+        public long RegionId { get; set; }
+
+        [ForeignKey(nameof(RegionId))]
+        public virtual Region Region { get; set; }
     }
 }

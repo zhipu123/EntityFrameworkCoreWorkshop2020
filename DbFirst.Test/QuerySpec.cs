@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using DBFirst.Data;
@@ -78,19 +80,92 @@ namespace DbFirst.Test
         {
             var logOutputs = new List<LogOutput>();
             var optionsWithLogging =
-                SqliteInMemory.CreateOptionsWithLogging<Northwind_smallContext>(logOutputs.Add)
+                SqliteInMemory.CreateOptions<Northwind_smallContext>()
                         .WithExtension(new ProxiesOptionsExtension().WithLazyLoading()) as
                     DbContextOptions<Northwind_smallContext>;
             using var context = new Northwind_smallContext(optionsWithLogging);
             context.Database.ExecuteSqlRaw(CreaeSqlCommands);
             context.SaveChanges();
-            logOutputs.Clear();
+            SetupLogging(context, logOutputs);
+            var stopwatch = Stopwatch.StartNew();
             var order = context.Order
                 .FirstOrDefault(o => o.Customer.CompanyName == "Vins et alcools Chevalier");
 
             Assert.That(order, Is.Not.Null);
             Assert.That(order.Employee, Is.Not.Null);
-            Assert.That(logOutputs.Count, Is.EqualTo(2));
+            Assert.That(order.Customer, Is.Not.Null);
+            Console.WriteLine(order.Customer);
+            Console.WriteLine(
+                $"Employee: {order?.Employee.FirstName + " " + order?.Employee.LastName} " +
+                $"Reports to {order?.Employee?.ReportsToEmployee.FirstName + " " + order?.Employee?.ReportsToEmployee.LastName} " +
+                $"Service {order.Customer.ContactName}." +
+                $"BTW he also take a look a {order.Employee.EmployeeTerritories.Select(territory => territory.Territory).Count()} territories." +
+                $"Such as: {String.Join(",", order.Employee.EmployeeTerritories .Select(et => et.Territory.TerritoryDescription + " in " + et.Territory.Region.RegionDescription))}"
+            );
+            stopwatch.Stop();
+            Console.WriteLine("takes {0} ms ", stopwatch.ElapsedMilliseconds);
+            Assert.That(logOutputs.Count, Is.EqualTo(13));
+        }
+        
+        [Test]
+        public void IncludeOnly()
+        {
+            var (context, logs) = InitialContext();
+            var stopwatch = Stopwatch.StartNew();
+
+            var order =  context.Order
+                .Include(o => o.Employee)
+                    .ThenInclude(employee => employee.EmployeeTerritories)
+                        .ThenInclude(territory => territory.Territory)
+                            .ThenInclude(territory => territory.Region)
+                .Include(o => o.Employee)
+                    .ThenInclude(e=> e.ReportsToEmployee)
+                .Include(o=>o.Customer)
+                .FirstOrDefault(o => o.Customer.CompanyName == "Vins et alcools Chevalier");
+
+            Assert.That(order, Is.Not.Null);
+            Assert.That(order.Employee, Is.Not.Null);
+            Assert.That(order.Customer, Is.Not.Null);
+            Console.WriteLine(order.Customer);
+            Console.WriteLine(
+                $"Employee: {order?.Employee.FirstName + " " + order?.Employee.LastName} " +
+                $"Reports to {order?.Employee?.ReportsToEmployee.FirstName + " " + order?.Employee?.ReportsToEmployee.LastName} " +
+                $"Service {order.Customer.ContactName}." +
+                $"BTW he also take a look a {order.Employee.EmployeeTerritories.Select(territory => territory.Territory).Count()} territories." +
+                $"Such as: {String.Join(",", order.Employee.EmployeeTerritories .Select(et => et.Territory.TerritoryDescription + " in " + et.Territory.Region.RegionDescription))}"
+            );
+            stopwatch.Stop();
+            Console.WriteLine("takes {0} ms ", stopwatch.ElapsedMilliseconds);
+            Assert.That(logs.Count, Is.EqualTo(1));
+        }
+        
+        [Test]
+        public void IncludeAndExplicit()
+        {
+            var (context, logs) = InitialContext();
+            var stopwatch = Stopwatch.StartNew();
+
+            var order = context.Order
+                .Include(o => o.Customer)
+                .Include(o => o.Employee)
+                  .ThenInclude(employee => employee.ReportsToEmployee)
+                .FirstOrDefault(o => o.Customer.CompanyName == "Vins et alcools Chevalier");
+            context.Entry(order.Employee).Collection(e=>e.EmployeeTerritories).Query().Include(territory => territory.Territory).ThenInclude(territory => territory.Region).Load();
+
+            Assert.That(order, Is.Not.Null);
+            Assert.That(order.Employee, Is.Not.Null);
+            Assert.That(order.Customer, Is.Not.Null);
+            Console.WriteLine(order.Customer);
+            Console.WriteLine(
+                $"Employee: {order?.Employee.FirstName + " " + order?.Employee.LastName} " +
+                $"Reports to {order?.Employee?.ReportsToEmployee.FirstName + " " + order?.Employee?.ReportsToEmployee.LastName} " +
+                $"Service {order.Customer.ContactName}." +
+                $"BTW he also take a look a {order.Employee.EmployeeTerritories.Select(territory => territory.Territory).Count()} territories." +
+                $"Such as: {String.Join(",", order.Employee.EmployeeTerritories .Select(et => et.Territory.TerritoryDescription + " in " + et.Territory.Region.RegionDescription))}"
+                );
+            stopwatch.Stop();
+            Console.WriteLine("takes {0} ms ", stopwatch.ElapsedMilliseconds);
+            Assert.That(logs.Count, Is.EqualTo(2));
         }
 
         [Test]
@@ -204,6 +279,21 @@ namespace DbFirst.Test
         }
 
         [Test]
+        public void RawSqlWithParamater()
+        {
+            var (context, logOutputs) = InitialContext();
+            using (context)
+            {
+                var order = context.Order
+                    .FromSqlInterpolated(
+                        $"select * from \"Order\" join Customer on CustomerId = Customer.Id\nwhere ContactName = {"Alejandra Camino"}")
+                    .Include(order1 => order1.Customer)
+                    .FirstOrDefault();
+                Assert.That(order.Customer, Is.Not.Null);
+            }
+        }
+
+        [Test]
         public void SearchStartWith()
         {
             var (context, logs) = InitialContext();
@@ -220,7 +310,7 @@ namespace DbFirst.Test
                 Assert.That(logs[0].Message.Contains("LIKE 'Vins et alcools%'"));
             }
         }
-        
+
         [Test]
         public void SearchIndexOf()
         {
@@ -239,7 +329,7 @@ namespace DbFirst.Test
                 Assert.That(logs[0].Message.Contains("'et alcools'"));
             }
         }
-          
+
         [Test]
         public void EndWith()
         {
@@ -255,7 +345,7 @@ namespace DbFirst.Test
                 Assert.That(logs[0].Message.Contains("'%alcools Chevalier"));
             }
         }
-        
+
         [Test]
         public void Like()
         {

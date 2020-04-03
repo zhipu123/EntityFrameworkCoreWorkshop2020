@@ -22,5 +22,10 @@ namespace DBFirst.Models
         public long UnitsOnOrder { get; set; }
         public long ReorderLevel { get; set; }
         public long Discontinued { get; set; }
+        
+        [ForeignKey(nameof(SupplierId))]
+        public virtual Supplier Supplier { get; set; }
+        [ForeignKey(nameof(CategoryId))]
+        public virtual Category Category { get; set; }
     }
 }
